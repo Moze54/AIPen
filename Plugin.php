@@ -18,6 +18,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         Typecho_Plugin::factory('admin/write-post.php')->bottom = array('AIPen_Plugin', 'render');
         Typecho_Plugin::factory('admin/write-page.php')->bottom = array('AIPen_Plugin', 'render');
 
+        // 添加后台配置页面样式
+        Typecho_Plugin::factory('admin/footer.php')->end = array('AIPen_Plugin', 'adminStyles');
+
         // 添加路由处理 AI 请求
         Helper::addRoute('AIPen_Action', '/AIPen/Action', 'AIPen_Action', 'generate');
 
@@ -38,6 +41,12 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
+        // 在表单前添加插件介绍
+        echo '<div style="margin-bottom: 20px; padding: 20px 24px; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+            <h2 style="margin: 0 0 8px 0; color: #fff; font-size: 20px; font-weight: 700;">🤖 AIPen - AI 智能写作助手</h2>
+            <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 13px; line-height: 1.6;">集成 OpenAI 兼容接口，为 Typecho 编辑器提供 AI 内容生成功能。支持多种写作风格，让创作更高效。</p>
+        </div>';
+
         // API 地址
         $apiUrl = new Typecho_Widget_Helper_Form_Element_Text(
             'apiUrl',
@@ -106,6 +115,104 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
     public static function personalConfig(Typecho_Widget_Helper_Form $form)
     {
         // 可以添加用户级别的配置
+    }
+
+    /**
+     * 后台配置页面样式
+     */
+    public static function adminStyles()
+    {
+        // 只在插件配置页面加载样式
+        $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($currentUrl, 'AIPen') === false) {
+            return;
+        }
+
+        echo '<style>
+        /* AIPen 插件配置页面美化样式 */
+
+        /* 表单容器 - 紧凑简洁 */
+        .typecho-option {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+        .typecho-option:hover {
+            border-color: #cbd5e1;
+        }
+
+        /* 标签 - 简洁 */
+        .typecho-option label {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* 描述文字 - 简洁 */
+        .typecho-option .description {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* 输入框和文本域 - 简洁 */
+        .typecho-option input[type="text"],
+        .typecho-option textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            background: #fafbfc;
+            color: #1e293b;
+            box-sizing: border-box;
+        }
+        .typecho-option input[type="text"]:focus,
+        .typecho-option textarea:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        .typecho-option textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.6;
+        }
+        .typecho-option input[type="text"]:hover,
+        .typecho-option textarea:hover {
+            border-color: #cbd5e1;
+        }
+
+        /* 按钮美化 */
+        .typecho-submit {
+            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
+        }
+        .typecho-submit:hover {
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+            transform: translateY(-1px);
+        }
+        .typecho-submit:active {
+            transform: translateY(0);
+        }
+        </style>';
     }
 
     /**
