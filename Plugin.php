@@ -53,9 +53,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         $apiUrl = new Typecho_Widget_Helper_Form_Element_Text(
             'apiUrl',
             NULL,
-            'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+            '',
             _t('API 请求地址'),
-            _t('AI 服务的 API 地址，例如 OpenAI 兼容接口')
+            _t('AI 服务的 API 地址，例如：https://api.openai.com/v1/chat/completions 或 https://open.bigmodel.cn/api/paas/v4/chat/completions')
         );
         $form->addInput($apiUrl);
 
@@ -63,9 +63,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         $apiKey = new Typecho_Widget_Helper_Form_Element_Text(
             'apiKey',
             NULL,
-            'fc52569fdc7144059b37368692c30e24.zSJGVFj3tLAkjyFw',
+            '',
             _t('API 密钥'),
-            _t('请输入你的 API Key')
+            _t('请输入你的 API Key（必填）')
         );
         $apiKey->input->setAttribute('style', 'width: 100%');
         $form->addInput($apiKey);
@@ -74,9 +74,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         $modelName = new Typecho_Widget_Helper_Form_Element_Text(
             'modelName',
             NULL,
-            'glm-4',
+            '',
             _t('模型名称'),
-            _t('要使用的 AI 模型，如 gpt-3.5-turbo, gpt-4, glm-4 等')
+            _t('要使用的 AI 模型，如 gpt-3.5-turbo, gpt-4, glm-4, deepseek-chat 等（必填）')
         );
         $form->addInput($modelName);
 
