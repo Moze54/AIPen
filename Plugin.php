@@ -342,19 +342,24 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '  ✨ AI 助手';
         echo '</div>';
 
-        echo '<div id="ai-writer-panel" style="position: fixed; right: -420px; top: 50%; transform: translateY(-50%); width: 420px; background: #fff; border-radius: 20px 0 0 20px; box-shadow: -10px 0 60px rgba(0, 0, 0, 0.15); z-index: 99998; transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 90vh; overflow: hidden;">';
-        echo '<div style="padding: 28px; max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 100%);">';
-
-        echo '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #ccfbf1;">';
+        echo '<div id="ai-writer-panel" style="position: fixed; right: -420px; top: 50%; transform: translateY(-50%); width: 420px; background: #fff; border-radius: 20px 0 0 20px; box-shadow: -10px 0 60px rgba(0, 0, 0, 0.15); z-index: 99998; transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); height: 90vh; max-height: 700px; display: flex; flex-direction: column; overflow: hidden;">';
+        
+        // 头部
+        echo '<div style="padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">';
+        echo '<div style="display: flex; justify-content: space-between; align-items: center;">';
         echo '<div style="display: flex; align-items: center; gap: 12px;">';
-        echo '<div style="width: 42px; height: 42px; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">AI</div>';
+        echo '<div style="width: 38px; height: 38px; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);">AI</div>';
         echo '<div>';
-        echo '<h3 style="margin: 0; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 20px; font-weight: 700;">AIPen 智能写作</h3>';
-        echo '<p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;">AI 驱动的内容创作助手</p>';
+        echo '<h3 style="margin: 0; color: #0ea5e9; font-size: 18px; font-weight: 700;">AIPen 智能写作</h3>';
+        echo '<p style="margin: 2px 0 0 0; font-size: 11px; color: #94a3b8;">AI 驱动的内容创作助手</p>';
         echo '</div>';
         echo '</div>';
-        echo '<button id="ai-close-btn" style="background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; color: #64748b; font-size: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">×</button>';
+        echo '<button id="ai-close-btn" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">×</button>';
         echo '</div>';
+        echo '</div>';
+        
+        // 内容区域（可滚动）
+        echo '<div style="flex: 1; overflow-y: auto; padding: 20px 24px; background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 100%);">';
 
         // 文章类型选择
         echo '<div style="margin-bottom: 20px;">';
@@ -445,7 +450,7 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '</div>';
 
         // 内容结构选项（多选）
-        echo '<div style="margin-bottom: 20px;">';
+        echo '<div style="margin-bottom: 16px;">';
         echo '<label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 10px; color: #334155; font-size: 14px;">';
         echo '<span style="font-size: 16px;">🔧</span> 内容选项';
         echo '</label>';
@@ -457,27 +462,32 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         
         echo '</div>';
         echo '</div>';
-
+        
+        echo '</div>'; // 结束内容滚动区域
+        
+        // 底部固定按钮区域
+        echo '<div style="padding: 16px 24px 20px; border-top: 1px solid #e2e8f0; flex-shrink: 0; background: #fff;">';
+        
         // 文章主题输入
-        echo '<div style="margin-bottom: 20px;">';
-        echo '<label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 10px; color: #334155; font-size: 14px;">';
+        echo '<div style="margin-bottom: 14px;">';
+        echo '<label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 8px; color: #334155; font-size: 14px;">';
         echo '<span style="font-size: 16px;">📝</span> 文章主题';
         echo '</label>';
-        echo '<textarea id="ai-prompt-input" rows="4" style="width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; resize: vertical; min-height: 100px; font-family: inherit; transition: all 0.2s; line-height: 1.7; color: #1e293b; font-weight: 400; box-sizing: border-box;" placeholder="描述你想写的文章主题、大纲或要点..."></textarea>';
+        echo '<textarea id="ai-prompt-input" rows="3" style="width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; resize: vertical; min-height: 80px; max-height: 120px; font-family: inherit; transition: all 0.2s; line-height: 1.6; color: #1e293b; font-weight: 400; box-sizing: border-box;" placeholder="描述你想写的文章主题..."></textarea>';
         echo '</div>';
 
         echo '<button id="ai-generate-btn" type="button" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35); letter-spacing: 1px;">';
         echo '✨ 开始创作';
         echo '</button>';
 
-        echo '<div id="ai-loading" style="display: none; margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%); border-radius: 10px; text-align: center; border: 1px solid #ccfbf1;">';
-        echo '  <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">';
-        echo '    <div style="width: 20px; height: 20px; border: 3px solid #ccfbf1; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
-        echo '    <span style="color: #0ea5e9; font-size: 14px; font-weight: 500;">AI 正在创作中...</span>';
+        echo '<div id="ai-loading" style="display: none; margin-top: 12px; padding: 12px; background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%); border-radius: 10px; text-align: center; border: 1px solid #ccfbf1;">';
+        echo '  <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">';
+        echo '    <div style="width: 18px; height: 18px; border: 3px solid #ccfbf1; border-top-color: #0ea5e9; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>';
+        echo '    <span style="color: #0ea5e9; font-size: 13px; font-weight: 500;">AI 正在创作中...</span>';
         echo '  </div>';
         echo '</div>';
-        echo '</div>';
-        echo '</div>';
+        echo '</div>'; // 底部固定按钮区域结束
+        echo '</div>'; // 面板结束
 
         echo '<style>';
         echo '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
@@ -540,8 +550,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '    top: 0 !important;';
         echo '    transform: none !important;';
         echo '    border-radius: 0 !important;';
-        echo '    max-height: 100vh !important;';
         echo '    height: 100vh !important;';
+        echo '    max-height: 100vh !important;';
         echo '    z-index: 999999 !important;';
         echo '  }';
         echo '  #ai-writer-toggle:hover {';
@@ -549,18 +559,6 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '  }';
         echo '  #ai-writer-toggle.generating:hover {';
         echo '    transform: translateY(-50%) !important;';
-        echo '  }';
-        echo '}';
-        echo '@media (max-width: 480px) {';
-        echo '  #ai-writer-panel > div {';
-        echo '    padding: 16px !important;';
-        echo '    max-height: 100vh !important;';
-        echo '    height: 100% !important;';
-        echo '    overflow-y: auto !important;';
-        echo '  }';
-        echo '  .ai-message {';
-        echo '    min-width: auto !important;';
-        echo '    width: 90vw !important;';
         echo '  }';
         echo '}';
         echo '</style>';
