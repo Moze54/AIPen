@@ -136,6 +136,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         }
 
         // 直接输出 HTML，避免文件路径问题
+        echo '<div id="ai-message-container" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; pointer-events: none;"></div>';
+
         echo '<div id="ai-writer-toggle" style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%); color: white; padding: 18px 12px; border-radius: 14px 0 0 14px; cursor: pointer; z-index: 99999; box-shadow: -4px 2px 20px rgba(14, 165, 233, 0.4); writing-mode: vertical-rl; text-orientation: mixed; font-weight: 600; letter-spacing: 3px; font-size: 14px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">';
         echo '  ✨ AI 助手';
         echo '</div>';
@@ -197,6 +199,14 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
 
         echo '<style>';
         echo '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        echo '@keyframes slideIn { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }';
+        echo '@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }';
+        echo '.ai-message { padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); animation: slideIn 0.3s ease-out; pointer-events: auto; min-width: 200px; max-width: 90vw; font-size: 14px; border: 1px solid rgba(0,0,0,0.08); }';
+        echo '.ai-message.success { background: #d1fae5; color: #065f46; }';
+        echo '.ai-message.error { background: #fee2e2; color: #991b1b; }';
+        echo '.ai-message.warning { background: #fef3c7; color: #92400e; }';
+        echo '.ai-message.info { background: #dbeafe; color: #1e40af; }';
+        echo '.ai-message.fadeOut { animation: fadeOut 0.3s ease-out forwards; }';
         echo '#ai-style-selected:hover { border-color: #0ea5e9 !important; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }';
         echo '#ai-style-selected.open { border-color: #0ea5e9 !important; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15); }';
         echo '#ai-style-selected.open + #ai-style-dropdown { display: block; }';
@@ -210,6 +220,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '#ai-generate-btn:active { transform: translateY(0); }';
         echo '#ai-generate-btn:disabled { background: linear-gradient(135deg, #cbd5e0 0%, #94a3b8 100%); cursor: not-allowed; transform: none; box-shadow: none; }';
         echo '#ai-writer-toggle:hover { background: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%); transform: translateX(-6px); box-shadow: -6px 4px 25px rgba(20, 184, 166, 0.5); }';
+        echo '#ai-writer-toggle.generating { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); animation: pulse 1.5s ease-in-out infinite; cursor: default; }';
+        echo '#ai-writer-toggle.generating:hover { transform: none; box-shadow: -4px 2px 20px rgba(245, 158, 11, 0.4); }';
+        echo '@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }';
         echo '#ai-close-btn:hover { background: #e2e8f0; color: #475569; }';
         echo '@media (max-width: 768px) {';
         echo '  #ai-writer-toggle {';
@@ -239,6 +252,9 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '  #ai-writer-toggle:hover {';
         echo '    transform: translateY(-50%) translateX(-6px) !important;';
         echo '  }';
+        echo '  #ai-writer-toggle.generating:hover {';
+        echo '    transform: translateY(-50%) !important;';
+        echo '  }';
         echo '}';
         echo '@media (max-width: 480px) {';
         echo '  #ai-writer-panel > div {';
@@ -246,6 +262,10 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '    max-height: 100vh !important;';
         echo '    height: 100% !important;';
         echo '    overflow-y: auto !important;';
+        echo '  }';
+        echo '  .ai-message {';
+        echo '    min-width: auto !important;';
+        echo '    width: 90vw !important;';
         echo '  }';
         echo '}';
         echo '</style>';
@@ -263,7 +283,20 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '  let isPanelOpen = false;';
         echo '  let isGenerating = false;';
         echo '  let selectedStyle = "正式";';
+        echo '  let originalBtnText = toggleBtn.innerHTML;';
         echo '  const actionUrl = window.location.pathname.replace(/\/admin\/.*$/, "") + "/index.php/AIPen/Action";';
+
+        echo '  function showMessage(message, type) {';
+        echo '    type = type || "info";';
+        echo '    const container = document.getElementById("ai-message-container");';
+        echo '    const msgEl = document.createElement("div");';
+        echo '    msgEl.className = "ai-message " + type;';
+        echo '    const icons = { success: "✓", error: "✕", warning: "⚠", info: "ℹ" };';
+        echo '    msgEl.innerHTML = "<span style=\'font-size: 16px; margin-right: 4px;\'>" + icons[type] + "</span><span>" + message + "</span>";';
+        echo '    container.appendChild(msgEl);';
+        echo '    setTimeout(function() { msgEl.classList.add(\'fadeOut\'); }, 2700);';
+        echo '    setTimeout(function() { if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl); }, 3000);';
+        echo '  }';
 
         echo '  styleSelected.addEventListener("click", function(e) {';
         echo '    e.stopPropagation();';
@@ -322,12 +355,20 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
 
         echo '  generateBtn.addEventListener("click", async function() {';
         echo '    const prompt = promptInput.value.trim();';
-        echo '    if (!prompt) { alert("请输入文章主题或大纲"); return; }';
+        echo '    if (!prompt) { showMessage("请输入文章主题或大纲", "warning"); return; }';
         echo '    const style = selectedStyle;';
         echo '    generateBtn.disabled = true;';
         echo '    generateBtn.textContent = "生成中...";';
         echo '    loadingEl.style.display = "block";';
         echo '    isGenerating = true;';
+
+        echo '    if (isPanelOpen) {';
+        echo '      togglePanel();';
+        echo '    }';
+        echo '    toggleBtn.innerHTML = "⏳ 生成中";';
+        echo '    toggleBtn.classList.add("generating");';
+        echo '    toggleBtn.style.opacity = "1";';
+        echo '    toggleBtn.style.pointerEvents = "none";';
 
         echo '    try {';
         echo '      const response = await fetch(actionUrl, {';
@@ -365,11 +406,11 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '              }';
         echo '              appendToEditor(chunk.data);';
         echo '            } else if (chunk.type === "error") {';
-        echo '              alert("生成失败：" + chunk.data);';
+        echo '              showMessage("生成失败：" + chunk.data, "error");';
         echo '              isGenerating = false;';
         echo '              break;';
         echo '            } else if (chunk.type === "done") {';
-        echo '              alert("内容生成完成！");';
+        echo '              showMessage("内容生成完成！", "success");';
         echo '              isGenerating = false;';
         echo '            }';
         echo '          } catch (e) {';
@@ -378,12 +419,15 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '        }';
         echo '      }';
         echo '    } catch (error) {';
-        echo '      alert("请求失败：" + error.message);';
+        echo '      showMessage("请求失败：" + error.message, "error");';
         echo '      isGenerating = false;';
         echo '    } finally {';
         echo '      generateBtn.disabled = false;';
         echo '      generateBtn.textContent = "开始创作";';
         echo '      loadingEl.style.display = "none";';
+        echo '      toggleBtn.innerHTML = originalBtnText;';
+        echo '      toggleBtn.classList.remove("generating");';
+        echo '      toggleBtn.style.pointerEvents = "auto";';
         echo '    }';
         echo '  });';
         echo '})();';
