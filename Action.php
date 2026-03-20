@@ -53,7 +53,7 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
         $prompt = $this->request->get('prompt');
         $articleType = $this->request->get('articleType', '技术博客');
         $style = $this->request->get('style', '正式');
-        $audience = $this->request->get('audience', 'general');
+        $usage = $this->request->get('usage', 'blog');
         $length = $this->request->get('length', 'medium');
         $structures = $this->request->get('structures', '');
 
@@ -63,7 +63,7 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
         }
 
         // 构建完整的提示词
-        $fullPrompt = self::buildPrompt($prompt, $articleType, $style, $audience, $length, $structures);
+        $fullPrompt = self::buildPrompt($prompt, $articleType, $style, $usage, $length, $structures);
 
         // 调用 AI API（流式）
         $this->callAIAPI($fullPrompt);
@@ -72,11 +72,12 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
     /**
      * 构建完整提示词
      */
-    private function buildPrompt($userPrompt, $articleType, $style, $audience, $length, $structures)
+    private function buildPrompt($userPrompt, $articleType, $style, $usage, $length, $structures)
     {
         // 解析配置
         $articleTypes = self::parseStyles($this->plugin->articleTypes ?? '');
         $styles = self::parseStyles($this->plugin->styles ?? '');
+        $articleUsageList = self::parseStyles($this->plugin->articleUsage ?? '');
         $structureOptions = self::parseStyles($this->plugin->structureOptions ?? '');
         $systemPrompt = $this->plugin->systemPrompt ?? '你是一位专业的博客文章写手，擅长创作高质量、有价值的内容。';
 
@@ -86,18 +87,8 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
         // 获取风格描述
         $styleDesc = isset($styles[$style]) ? $styles[$style] : '以正式、专业的语调撰写文章';
 
-        // 目标受众描述
-        $audienceDesc = '';
-        switch ($audience) {
-            case 'beginner':
-                $audienceDesc = '目标读者是初学者，使用简单易懂的语言，多用比喻和实例解释复杂概念，避免过多专业术语';
-                break;
-            case 'professional':
-                $audienceDesc = '目标读者是专业人士，可以使用专业术语，深入探讨技术细节，提供高级内容';
-                break;
-            default:
-                $audienceDesc = '目标读者是一般读者，平衡专业性和可读性，适当解释专业术语';
-        }
+        // 文章用途描述
+        $usageDesc = isset($articleUsageList[$usage]) ? '发布平台：' . $usage . '，' . $articleUsageList[$usage] : '发布平台：个人博客，风格轻松个人化';
 
         // 文章长度描述
         $lengthDesc = '';
@@ -139,7 +130,7 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
 
 【写作风格】{$styleDesc}
 
-【目标受众】{$audienceDesc}
+【文章用途】{$usageDesc}
 
 【文章长度】{$lengthDesc}
 {$structureDesc}

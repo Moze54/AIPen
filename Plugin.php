@@ -88,19 +88,15 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         );
         $form->addInput($articleTypes);
 
-        // 目标受众
-        $targetAudience = new Typecho_Widget_Helper_Form_Element_Select(
-            'targetAudience',
-            array(
-                'beginner' => '初学者/小白 - 简单易懂，多用比喻和示例',
-                'general' => '一般读者 - 平衡专业性和可读性',
-                'professional' => '专业人士 - 深入专业，使用术语'
-            ),
-            'general',
-            _t('目标受众'),
-            _t('选择文章的目标读者群体，影响用词深度和解释方式')
+        // 文章用途预设
+        $articleUsage = new Typecho_Widget_Helper_Form_Element_Textarea(
+            'articleUsage',
+            NULL,
+            "个人博客:轻松个人化，有观点和情感，适合个人表达\n公司官网:专业正式，体现品牌形象，避免过于口语化\n知识分享:详细易懂，注重实用性，让读者学到知识\n技术文档:准确规范，逻辑清晰，便于查阅和操作\n社交媒体:简短精炼，开头吸引眼球，便于传播",
+            _t('文章用途预设'),
+            _t('每行一个用途，格式：用途名称:用途描述。用于指导AI适应不同发布平台')
         );
-        $form->addInput($targetAudience);
+        $form->addInput($articleUsage);
 
         // 文章长度
         $articleLength = new Typecho_Widget_Helper_Form_Element_Select(
@@ -303,6 +299,10 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
             if (!empty($plugin->articleTypes)) {
                 $articleTypes = self::parseStyles($plugin->articleTypes);
             }
+            // 解析文章用途
+            if (!empty($plugin->articleUsage)) {
+                $articleUsageList = self::parseStyles($plugin->articleUsage);
+            }
             // 解析内容结构选项
             if (!empty($plugin->structureOptions)) {
                 $structureOptions = self::parseStyles($plugin->structureOptions);
@@ -323,6 +323,13 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
                 '教程指南' => '撰写步骤清晰的教程，适合初学者'
             );
         }
+        if (empty($articleUsageList)) {
+            $articleUsageList = array(
+                '个人博客' => '轻松个人化，有观点和情感',
+                '公司官网' => '专业正式，体现品牌形象',
+                '知识分享' => '详细易懂，注重实用性'
+            );
+        }
         if (empty($structureOptions)) {
             $structureOptions = array(
                 '使用Markdown格式' => '使用标准Markdown语法',
@@ -331,8 +338,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
             );
         }
         
-        // 获取目标受众和文章长度配置
-        $targetAudience = $plugin ? ($plugin->targetAudience ?? 'general') : 'general';
+        // 获取文章用途和文章长度配置
+        $articleUsage = $plugin ? ($plugin->articleUsage ?? 'blog') : 'blog';
         $articleLength = $plugin ? ($plugin->articleLength ?? 'medium') : 'medium';
 
         // 直接输出 HTML，避免文件路径问题
@@ -401,26 +408,24 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '</div>';
         echo '</div>';
 
-        // 目标受众选择
+        // 文章用途选择
         echo '<div style="margin-bottom: 20px;">';
         echo '<label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 10px; color: #334155; font-size: 14px;">';
-        echo '<span style="font-size: 16px;">👥</span> 目标受众';
+        echo '<span style="font-size: 16px;">🎯</span> 文章用途';
         echo '</label>';
-        echo '<div id="ai-audience-select" style="position: relative; width: 100%;">';
-        echo '  <div id="ai-audience-selected" style="padding: 12px 48px 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: #fff; color: #1e293b; cursor: pointer; font-weight: 500; line-height: 22px; box-sizing: border-box; background-image: url(\'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'6 9 12 15 18 9\'></polyline></svg>\'); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; transition: all 0.2s;" data-value="' . $targetAudience . '">';
+        echo '<div id="ai-usage-select" style="position: relative; width: 100%;">';
         
-        $audienceLabels = array(
-            'beginner' => '初学者/小白',
-            'general' => '一般读者',
-            'professional' => '专业人士'
-        );
-        echo $audienceLabels[$targetAudience] ?? '一般读者';
-        
-        echo '</div>';
-        echo '  <div id="ai-audience-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; margin-top: 6px; z-index: 999999; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);">';
-        echo '    <div class="ai-audience-option" data-value="beginner" style="padding: 10px 16px; cursor: pointer; font-size: 14px; color: #334155; transition: all 0.15s;' . ($targetAudience === 'beginner' ? ' background: #f1f5f9;' : '') . '">初学者/小白 - 简单易懂</div>';
-        echo '    <div class="ai-audience-option" data-value="general" style="padding: 10px 16px; cursor: pointer; font-size: 14px; color: #334155; transition: all 0.15s;' . ($targetAudience === 'general' ? ' background: #f1f5f9;' : '') . '">一般读者 - 平衡可读性</div>';
-        echo '    <div class="ai-audience-option" data-value="professional" style="padding: 10px 16px; cursor: pointer; font-size: 14px; color: #334155; transition: all 0.15s;' . ($targetAudience === 'professional' ? ' background: #f1f5f9;' : '') . '">专业人士 - 深入专业</div>';
+        $firstUsage = key($articleUsageList);
+        echo '  <div id="ai-usage-selected" style="padding: 12px 48px 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: #fff; color: #1e293b; cursor: pointer; font-weight: 500; line-height: 22px; box-sizing: border-box; background-image: url(\'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'6 9 12 15 18 9\'></polyline></svg>\'); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; transition: all 0.2s;">' . htmlspecialchars($firstUsage) . '</div>';
+        echo '  <div id="ai-usage-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; margin-top: 6px; z-index: 999999; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12); max-height: 200px; overflow-y: auto;">';
+
+        $first = true;
+        foreach ($articleUsageList as $name => $desc) {
+            $bgStyle = $first ? 'background: #f1f5f9;' : '';
+            echo '    <div class="ai-usage-option" data-value="' . htmlspecialchars($name) . '" style="padding: 10px 16px; cursor: pointer; font-size: 14px; color: #334155; transition: all 0.15s;' . $bgStyle . '">' . htmlspecialchars($name) . '</div>';
+            $first = false;
+        }
+
         echo '  </div>';
         echo '</div>';
         echo '</div>';
@@ -533,14 +538,14 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
         echo '  #ai-writer-toggle {';
         echo '    top: 50% !important;';
         echo '    transform: translateY(-50%) !important;';
-        echo '    border-radius: 14px 0 0 14px !important;';
+        echo '    border-radius: 10px 0 0 10px !important;';
         echo '    writing-mode: vertical-rl !important;';
         echo '    text-orientation: mixed !important;';
-        echo '    padding: 18px 12px !important;';
+        echo '    padding: 12px 8px !important;';
         echo '    left: auto !important;';
         echo '    right: 0 !important;';
-        echo '    font-size: 14px !important;';
-        echo '    letter-spacing: 3px !important;';
+        echo '    font-size: 12px !important;';
+        echo '    letter-spacing: 2px !important;';
         echo '    z-index: 99999 !important;';
         echo '  }';
         echo '  #ai-writer-panel {';
@@ -576,14 +581,14 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
   var articleTypeDropdown = document.getElementById("ai-article-type-dropdown");
   var styleSelected = document.getElementById("ai-style-selected");
   var styleDropdown = document.getElementById("ai-style-dropdown");
-  var audienceSelected = document.getElementById("ai-audience-selected");
-  var audienceDropdown = document.getElementById("ai-audience-dropdown");
+  var usageSelected = document.getElementById("ai-usage-selected");
+  var usageDropdown = document.getElementById("ai-usage-dropdown");
   
   var isPanelOpen = false;
   var isGenerating = false;
   var selectedArticleType = "技术博客";
   var selectedStyle = "正式";
-  var selectedAudience = audienceSelected ? audienceSelected.getAttribute("data-value") || "general" : "general";
+  var selectedUsage = usageSelected ? usageSelected.getAttribute("data-value") || "blog" : "blog";
   var selectedLength = "medium";
   var selectedStructures = [];
   var originalBtnText = toggleBtn ? toggleBtn.innerHTML : "";
@@ -609,8 +614,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
       articleTypeSelected.classList.toggle("open", !isOpen);
       styleDropdown.style.display = "none";
       styleSelected.classList.remove("open");
-      audienceDropdown.style.display = "none";
-      audienceSelected.classList.remove("open");
+      usageDropdown.style.display = "none";
+      usageSelected.classList.remove("open");
     });
   }
 
@@ -635,8 +640,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
       styleSelected.classList.toggle("open", !isOpen);
       articleTypeDropdown.style.display = "none";
       articleTypeSelected.classList.remove("open");
-      audienceDropdown.style.display = "none";
-      audienceSelected.classList.remove("open");
+      usageDropdown.style.display = "none";
+      usageSelected.classList.remove("open");
     });
   }
 
@@ -653,12 +658,12 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
     });
   }
 
-  if (audienceSelected) {
-    audienceSelected.addEventListener("click", function(e) {
+  if (usageSelected) {
+    usageSelected.addEventListener("click", function(e) {
       e.stopPropagation();
-      var isOpen = audienceDropdown.style.display === "block";
-      audienceDropdown.style.display = isOpen ? "none" : "block";
-      audienceSelected.classList.toggle("open", !isOpen);
+      var isOpen = usageDropdown.style.display === "block";
+      usageDropdown.style.display = isOpen ? "none" : "block";
+      usageSelected.classList.toggle("open", !isOpen);
       articleTypeDropdown.style.display = "none";
       articleTypeSelected.classList.remove("open");
       styleDropdown.style.display = "none";
@@ -666,15 +671,15 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
     });
   }
 
-  var audienceOptions = document.querySelectorAll(".ai-audience-option");
-  for (var i = 0; i < audienceOptions.length; i++) {
-    audienceOptions[i].addEventListener("click", function() {
-      selectedAudience = this.getAttribute("data-value");
-      audienceSelected.textContent = this.textContent.split(" - ")[0];
-      audienceSelected.setAttribute("data-value", selectedAudience);
-      audienceDropdown.style.display = "none";
-      audienceSelected.classList.remove("open");
-      var opts = document.querySelectorAll(".ai-audience-option");
+  var usageOptions = document.querySelectorAll(".ai-usage-option");
+  for (var i = 0; i < usageOptions.length; i++) {
+    usageOptions[i].addEventListener("click", function() {
+      selectedUsage = this.getAttribute("data-value");
+      usageSelected.textContent = this.textContent.split(" - ")[0];
+      usageSelected.setAttribute("data-value", selectedUsage);
+      usageDropdown.style.display = "none";
+      usageSelected.classList.remove("open");
+      var opts = document.querySelectorAll(".ai-usage-option");
       for (var j = 0; j < opts.length; j++) opts[j].style.background = "";
       this.style.background = "#f1f5f9";
     });
@@ -720,8 +725,8 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
     if (articleTypeSelected) articleTypeSelected.classList.remove("open");
     if (styleDropdown) styleDropdown.style.display = "none";
     if (styleSelected) styleSelected.classList.remove("open");
-    if (audienceDropdown) audienceDropdown.style.display = "none";
-    if (audienceSelected) audienceSelected.classList.remove("open");
+    if (usageDropdown) usageDropdown.style.display = "none";
+    if (usageSelected) usageSelected.classList.remove("open");
   });
 
   function togglePanel() {
@@ -776,7 +781,7 @@ class AIPen_Plugin implements Typecho_Plugin_Interface
       formData.append("prompt", prompt);
       formData.append("articleType", selectedArticleType);
       formData.append("style", selectedStyle);
-      formData.append("audience", selectedAudience);
+      formData.append("usage", selectedUsage);
       formData.append("length", selectedLength);
       formData.append("structures", selectedStructures.join(","));
 
