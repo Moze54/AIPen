@@ -51,7 +51,11 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
 
         // 获取参数
         $prompt = $this->request->get('prompt');
+        $articleType = $this->request->get('articleType', '技术博客');
         $style = $this->request->get('style', '正式');
+        $audience = $this->request->get('audience', 'general');
+        $length = $this->request->get('length', 'medium');
+        $structures = $this->request->get('structures', '');
 
         if (empty($prompt)) {
             $this->sendStreamChunk('error', '请输入提示词');
@@ -59,7 +63,7 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
         }
 
         // 构建完整的提示词
-        $fullPrompt = self::buildPrompt($prompt, $style);
+        $fullPrompt = self::buildPrompt($prompt, $articleType, $style, $audience, $length, $structures);
 
         // 调用 AI API（流式）
         $this->callAIAPI($fullPrompt);
@@ -68,12 +72,85 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
     /**
      * 构建完整提示词
      */
-    private function buildPrompt($userPrompt, $style)
+    private function buildPrompt($userPrompt, $articleType, $style, $audience, $length, $structures)
     {
-        $styles = self::parseStyles($this->plugin->styles);
-        $stylePrompt = isset($styles[$style]) ? $styles[$style] : (isset($styles['正式']) ? $styles['正式'] : '以正式、专业的语调撰写文章');
+        // 解析配置
+        $articleTypes = self::parseStyles($this->plugin->articleTypes ?? '');
+        $styles = self::parseStyles($this->plugin->styles ?? '');
+        $structureOptions = self::parseStyles($this->plugin->structureOptions ?? '');
+        $systemPrompt = $this->plugin->systemPrompt ?? '你是一位专业的博客文章写手，擅长创作高质量、有价值的内容。';
 
-        return "请以以下风格撰写文章：{$stylePrompt}\n\n主题/大纲：{$userPrompt}\n\n请生成一篇完整、连贯的文章。";
+        // 获取文章类型描述
+        $articleTypeDesc = isset($articleTypes[$articleType]) ? $articleTypes[$articleType] : '撰写高质量的文章';
+        
+        // 获取风格描述
+        $styleDesc = isset($styles[$style]) ? $styles[$style] : '以正式、专业的语调撰写文章';
+
+        // 目标受众描述
+        $audienceDesc = '';
+        switch ($audience) {
+            case 'beginner':
+                $audienceDesc = '目标读者是初学者，使用简单易懂的语言，多用比喻和实例解释复杂概念，避免过多专业术语';
+                break;
+            case 'professional':
+                $audienceDesc = '目标读者是专业人士，可以使用专业术语，深入探讨技术细节，提供高级内容';
+                break;
+            default:
+                $audienceDesc = '目标读者是一般读者，平衡专业性和可读性，适当解释专业术语';
+        }
+
+        // 文章长度描述
+        $lengthDesc = '';
+        switch ($length) {
+            case 'short':
+                $lengthDesc = '文章长度约500-800字，简洁精炼，重点突出';
+                break;
+            case 'medium':
+                $lengthDesc = '文章长度约1000-1500字，内容充实，结构完整';
+                break;
+            case 'long':
+                $lengthDesc = '文章长度约2000-3000字，详细深入，全面覆盖主题';
+                break;
+            case 'very_long':
+                $lengthDesc = '文章长度3000字以上，深度剖析，包含丰富的细节和案例';
+                break;
+            default:
+                $lengthDesc = '文章长度约1000-1500字';
+        }
+
+        // 内容结构要求
+        $structureDesc = '';
+        if (!empty($structures)) {
+            $structureList = explode(',', $structures);
+            $structureDesc = "\n内容结构要求：";
+            foreach ($structureList as $struct) {
+                $struct = trim($struct);
+                if (isset($structureOptions[$struct])) {
+                    $structureDesc .= "\n- " . $structureOptions[$struct];
+                }
+            }
+        }
+
+        // 构建完整的提示词
+        $fullPrompt = <<<EOT
+{$systemPrompt}
+
+【文章类型】{$articleType}：{$articleTypeDesc}
+
+【写作风格】{$styleDesc}
+
+【目标受众】{$audienceDesc}
+
+【文章长度】{$lengthDesc}
+{$structureDesc}
+
+【用户主题/大纲】
+{$userPrompt}
+
+请根据以上要求生成一篇完整的博客文章。文章应该结构清晰、内容丰富、语言流畅。如果是技术文章，请确保代码示例准确可运行。
+EOT;
+
+        return $fullPrompt;
     }
 
     /**
@@ -86,10 +163,15 @@ class AIPen_Action extends Typecho_Widget implements Widget_Interface_Do
         $model = $this->plugin->modelName;
         $maxTokens = intval($this->plugin->maxTokens);
         $temperature = floatval($this->plugin->temperature);
+        $systemPrompt = $this->plugin->systemPrompt ?? '你是一位专业的博客文章写手。';
 
         $data = array(
             'model' => $model,
             'messages' => array(
+                array(
+                    'role' => 'system',
+                    'content' => $systemPrompt
+                ),
                 array(
                     'role' => 'user',
                     'content' => $prompt
