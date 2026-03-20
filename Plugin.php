@@ -4,8 +4,10 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * AIPen - AI 智能写作助手
  *
+ * @package AIPen
  * @author 优优
- * @website https://blog.uuhb.cn
+ * @version 1.0.0
+ * @link https://blog.uuhb.cn
  */
 class AIPen_Plugin implements Typecho_Plugin_Interface
 {
